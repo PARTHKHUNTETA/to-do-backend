@@ -1,15 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
+import { taskList } from '../mock/mockTask.js';
 
-let tasks = [];
+let tasks = [...taskList];
 export function getAllTask(req, res) {
-    res.json(tasks)
+    const { priority, category } = req.query;
+    let filteredTasks = tasks;
+    if (priority) {
+        filteredTasks = filteredTasks.filter(task => task.priority.toLowerCase() === priority.toLowerCase());
+    }
+    if (category) {
+        filteredTasks = filteredTasks.filter(task => task.category.toLowerCase() === category.toLowerCase());
+    }
+
+    res.json(filteredTasks);
 }
 export function createTask(req, res) {
-    const { title } = req.body;
+    const { title, priority, category } = req.body;
     if (!title) {
         return res.status(400).json({ message: 'Title is required' });
     }
-    const newTask = { id: uuidv4(), title };
+    const newTask = { id: uuidv4(), title, priority: priority.toLowerCase() || 'medium', category: category.toLowerCase() || 'general' };
     tasks.push(newTask);
     res.status(201).json(newTask);
 }
@@ -30,15 +40,16 @@ export function deleteAllTask(req, res) {
 
 export function updateTask(req, res) {
     const { id } = req.params;
-    const { title } = req.body;
-    if (!title) {
-        return res.status(400).json({ message: 'Title is Required' });
-    }
-    const taskToBeUpdated = tasks.find(task => task.id === id);
+    const { title, priority, category } = req.body;
+    const task = tasks.find(task => task.id === id);
 
-    if (!taskToBeUpdated) {
+    if (!task) {
         return res.status(404).json({ message: 'Task not found' });
     }
-    taskToBeUpdated.title = title;
-    res.status(200).json(taskToBeUpdated);
+
+    task.title = title || task.title;
+    task.priority = priority || task.priority;
+    task.category = category || task.category;
+
+    res.status(200).json(task);
 }
